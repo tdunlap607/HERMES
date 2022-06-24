@@ -53,4 +53,6 @@ python3 -m nltk.downloader punkt
 
 unzip ./MSR2019/experiments/sub_enhanced_dataset_th_100.txt.zip
 
+mkdir ./classifier_output
+
 python3 experiment.py --min_df 5 --use_linked_commits_only False --use_issue_classifier True --use_stacking_ensemble True --use-patch-context-lines False --tf-idf-threshold 0.005 --dataset sub_enhanced_dataset_th_100.txt
