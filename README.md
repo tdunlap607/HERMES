@@ -38,3 +38,19 @@ Descriptions for parameter in command:
 - use_stacking_ensemble [boolean]: Option to use stacking ensemble or simple voting to combine base classifier (i.e. message classsifier, patch classifier, issue classifier). If true, use stacking ensemble for combination. Otherwise, use simple voting
 - tf-idf-threshold [real]: Option in issue classifier to filter out noises in issue classifier
 - dataset [string]: Name of the dataset selected for experiment
+
+
+# Steps on how to replicate:
+python3 -m venv venv
+source ./venv/bin/activate
+
+mv ./data_loader/ ./loader
+
+pip3 install numpy pygithub scikit-learn nltk pandas
+
+python3 -m nltk.downloader stopwords
+python3 -m nltk.downloader punkt
+
+unzip ./MSR2019/experiments/sub_enhanced_dataset_th_100.txt.zip
+
+python3 experiment.py --min_df 5 --use_linked_commits_only False --use_issue_classifier True --use_stacking_ensemble True --use-patch-context-lines False --tf-idf-threshold 0.005 --dataset sub_enhanced_dataset_th_100.txt
