@@ -41,18 +41,30 @@ Descriptions for parameter in command:
 
 
 # Steps on how to replicate:
+Create a venv:
+~~~~
 python3 -m venv venv
 source ./venv/bin/activate
+~~~~
 
-mv ./data_loader/ ./loader
+Rename the data_loader folder to loader: ````mv ./data_loader/ ./loader````
 
-pip3 install numpy pygithub scikit-learn nltk pandas
+Install the necessary dependencies: ````pip3 install numpy pygithub scikit-learn nltk pandas````
 
+Download stopword and punkt:
+~~~~
 python3 -m nltk.downloader stopwords
 python3 -m nltk.downloader punkt
+~~~~
 
+Unzip the enchance dataset that you want to use:
+~~~~
 unzip ./MSR2019/experiments/sub_enhanced_dataset_th_100.txt.zip
+~~~~
 
-mkdir ./classifier_output
+Create a directory to hold the classifier output: ````mkdir ./classifier_output````
 
+Run from the command line:
+~~~~
 python3 experiment.py --min_df 5 --use_linked_commits_only False --use_issue_classifier True --use_stacking_ensemble True --use-patch-context-lines False --tf-idf-threshold 0.005 --dataset sub_enhanced_dataset_th_100.txt
+~~~~
