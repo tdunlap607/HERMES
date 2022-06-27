@@ -685,6 +685,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
 
 if __name__ == '__main__':
+    print("wait")
     do_experiment()
 
 # records = loader.load_records(file_path)
