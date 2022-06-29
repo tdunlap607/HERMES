@@ -51,7 +51,7 @@ Rename the data_loader folder to loader: ````mv ./data_loader/ ./loader````
 
 Install the necessary dependencies: ````pip3 install numpy pygithub scikit-learn nltk pandas````
 
-Download stopword and punkt:
+Download stopword and punkt: places data in /home/USERNAME/nltk_data/
 ~~~~
 python3 -m nltk.downloader stopwords
 python3 -m nltk.downloader punkt

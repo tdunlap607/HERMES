@@ -109,7 +109,7 @@ def svm_classify(classifier, x_train, x_test, y_train, y_test):
         train_predict_prob.append(predict_prob[0])
 
     test_predict_prob = []
-    for predict_prob in classifier.predict_proba(x_test):
+    for predict_prob in classifier.predict_proba(x_test[3]):
         test_predict_prob.append(predict_prob[0])
 
     false_positives, false_negatives = retrieve_false_positive_negative(y_pred, y_test)
@@ -425,6 +425,15 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                   use_linked_commits_only, use_issue_classifier, fold_to_run, use_stacking_ensemble, dataset,
                   tf_idf_threshold, use_patch_context_lines, run_fold):
 
+    """Print setting some configs based on command-line args from their repo"""
+    min_df = 5
+    use_linked_commits_only = False
+    use_issue_classifier = True
+    use_stacking_ensemble = True
+    use_patch_context_lines = False
+    tf_idf_threshold = 0.005
+    dataset = "sub_enhanced_dataset_th_100.txt"
+    
     global file_path
     if dataset != '':
         file_path = 'MSR2019/experiment/' + dataset
@@ -450,6 +459,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
     positive_weights = options.positive_weights
 
+    """List of records: id, github repo, commit sha"""
     records = data_loader.load_records(file_path)
 
     random.shuffle(records)
@@ -552,6 +562,9 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
         log_x_train, log_y_train = calculate_log_message_feature_vector(train_data, commit_message_vectorizer)
         log_x_test, log_y_test = calculate_log_message_feature_vector(test_data, commit_message_vectorizer)
+        
+        # """Create a single instance for testing"""
+        # log_x_test_0, log_y_test_0 = calculate_log_message_feature_vector([test_data[0]], commit_message_vectorizer)
 
         issue_x_train, issue_y_train, issue_x_test, issue_y_test = None, None, None, None
 
@@ -577,7 +590,8 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
             # calculate precision, recall for log message classification
             precision, recall, f1, log_message_prediction, log_message_train_predict_prob, log_message_test_predict_prob, false_positives, false_negatives\
                 = log_message_classify(log_classifier, log_x_train, log_y_train, log_x_test, log_y_test)
-
+                
+                
             print("Message F1: {}".format(f1))
             # print("Top features for log message classifier:")
             # retrieve_top_features(log_classifier, commit_message_vectorizer)
