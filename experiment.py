@@ -109,7 +109,7 @@ def svm_classify(classifier, x_train, x_test, y_train, y_test):
         train_predict_prob.append(predict_prob[0])
 
     test_predict_prob = []
-    for predict_prob in classifier.predict_proba(x_test[3]):
+    for predict_prob in classifier.predict_proba(x_test):
         test_predict_prob.append(predict_prob[0])
 
     false_positives, false_negatives = retrieve_false_positive_negative(y_pred, y_test)
@@ -247,7 +247,7 @@ def measure_joint_model(log_message_prediction, issue_prediction, patch_predicti
     auc_roc = metrics.roc_auc_score(y_true=test_data_labels, y_score=y_pos_probs)
     auc_pr = metrics.average_precision_score(y_true=test_data_labels, y_score=y_pos_probs)
 
-    return precision, recall, f1, auc_roc, auc_pr
+    return precision, recall, f1, auc_roc, auc_pr, join_prediction, test_data_labels
 
 
 def measure_joint_model_using_logistic_regression(train_data, test_data, log_message_train_predict_prob, id_to_issue_train_predict_prob,
@@ -424,6 +424,19 @@ def retrieve_top_features(classifier, vectorizer):
 def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, positive_weights, n_gram, min_df,
                   use_linked_commits_only, use_issue_classifier, fold_to_run, use_stacking_ensemble, dataset,
                   tf_idf_threshold, use_patch_context_lines, run_fold):
+    
+    """Load GT data"""
+    codeql_eval = pd.read_csv(f"../DAA-GT/java_data/sast_results/codeql/JavaEvalationGTData-CodeQL_FileEval.csv")
+    codeql_eval_tp = codeql_eval[codeql_eval["Detected"] == True]
+    codeql_eval_tp = codeql_eval_tp[["repo_owner", "repo_name",
+                                     "commit_sha", "cve"]].drop_duplicates()
+    
+    spotbugs_eval = pd.read_csv(f"../DAA-GT/java_data/sast_results/spotbugs/JavaEvalationGTData-Spotbugs_LineEval.csv")
+    spotbugs_eval_tp = spotbugs_eval[spotbugs_eval["Detected"] == True]
+    spotbugs_eval_tp = spotbugs_eval_tp[["repo_owner", "repo_name",
+                                         "commit_sha", "cve"]].drop_duplicates()
+    
+    gt_data = pd.concat([codeql_eval_tp, spotbugs_eval_tp]).drop_duplicates().reset_index(drop=True)
 
     """Print setting some configs based on command-line args from their repo"""
     min_df = 5
@@ -462,7 +475,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     """List of records: id, github repo, commit sha"""
     records = data_loader.load_records(file_path)
 
-    random.shuffle(records)
+    random.Random(109).shuffle(records)
 
     if options.use_linked_commits_only:
         new_records = []
@@ -545,9 +558,30 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     time = str(time).replace(":", "_")
 
     directory = os.path.dirname(os.path.abspath(__file__))
+    
+    """Remove any of the DAA GT from the training data"""
+    records_no_gt = []
+    records_testing = []
+    
+    gt_list = gt_data[["repo_owner", "repo_name", "commit_sha"]].values.tolist()
+    for each in records:
+        temp = [each.repo.split('/')[-2],
+                each.repo.split('/')[-1],
+                each.commit_id]
+        if temp in gt_list:
+            records_testing.append(int(each.id))
+        else:
+            records_no_gt.append(each)
 
-    for train_data_indices, test_data_indices in k_fold.split(records):
+    """Convert records_testing to indices"""
+    test_data_DAA_indices = np.array(records_testing)
+    
+    
+    for train_data_indices, test_data_indices in k_fold.split(records_no_gt):
+        """Set testing data to DAA GT data"""
+        test_data_indices = test_data_DAA_indices
         fold_count += 1
+        print(fold_count)
         if run_fold != -1 and fold_count != run_fold:
             continue
         output_file_name = "fold_" + str(fold_count) + "_" + str(date) + "_" + str(time) + ".txt"
@@ -657,7 +691,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                     f.write(output_lines)
                 f.close()
             else:
-                joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr \
+                joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr, joint_prediction, joint_test_data_labels \
                     = measure_joint_model(log_message_prediction, issue_prediction,
                                           patch_prediction, log_message_test_predict_prob, patch_test_predict_prob, retrieve_label(test_data), options)
 

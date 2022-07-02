@@ -68,3 +68,25 @@ Run from the command line:
 ~~~~
 python3 experiment.py --min_df 5 --use_linked_commits_only False --use_issue_classifier True --use_stacking_ensemble True --use-patch-context-lines False --tf-idf-threshold 0.005 --dataset sub_enhanced_dataset_th_100.txt
 ~~~~
+
+
+Temp results on DAA:
+Message F1: 0.8
+Issue F1: 1.0
+Patch F1: 0.8
+------------------------------------------------
+Training result for positive weight: 0.5, negative weight: 0.5
+Log message mean precision: 1.0
+Log message mean recall: 0.6666666666666666
+Log message mean f1: 0.8
+Issue mean precision: 1.0
+Issue mean recall: 1.0
+Issue mean f1: 1.0
+Patch mean precision: 1.0
+Patch mean recall: 0.6666666666666666
+Patch mean f1: 0.8
+Joint-model mean precision: 1.0
+Joint-model mean recall: 0.6666666666666666
+Joint-model mean f1: 0.8
+Joint-model mean AUC-ROC: 1.0
+Joint-model mean AUC-PR: 1.0
