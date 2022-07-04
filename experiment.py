@@ -29,6 +29,15 @@ def preprocess_data(records, options):
     return records
 
 
+def attach_issue_unprocessed(record, options):
+    record.issue_info = ''
+    if options.use_issue_classifier:
+        if len(record.github_issue_list) > 0:
+            record.issue_info = data_preprocessor.attach_github_issue(record.issue_info, record.github_issue_list, options)
+        if len(record.jira_ticket_list) > 0:
+            record.issue_info = data_preprocessor.attach_jira_ticket(record.issue_info, record.jira_ticket_list, options)
+            
+
 def filter_using_tf_idf_threshold(records, options):
     print("Filtering using tf-idf threshold...")
     issue_tfidf_vectorizer = TfidfVectorizer(min_df=options.min_document_frequency)
@@ -474,7 +483,22 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
 
     """List of records: id, github repo, commit sha"""
     records = data_loader.load_records(file_path)
-
+    
+    """Compare records to SAP data to understand labels"""
+    vulas_db = pd.read_csv(f"./MSR2019/experiment/vulas_db_msr2019_release.csv",
+                           names=["cve", "github", "commit_sha", "pos"],
+                           header=None)
+    
+    label_check = []
+    issue_count = []
+    
+    for record in records:
+        if record.issue_info != '':
+            print("wait")
+            issue_count.append(record)
+        if record.commit_id in vulas_db["commit_sha"].values.tolist():
+            label_check.append([record.label, record.commit_id])
+    
     random.Random(109).shuffle(records)
 
     if options.use_linked_commits_only:
