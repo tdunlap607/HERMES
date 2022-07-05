@@ -318,12 +318,27 @@ def measure_joint_model_using_logistic_regression(train_data, test_data, log_mes
     ensemble_classifier.fit(X=X_train, y=y_train)
     y_pred = ensemble_classifier.predict(X=X_test)
     y_prob = ensemble_classifier.predict_proba(X=X_test)[:, 1]
+    
+    """Create a DF of the prediction for the test data and output results"""
+    results = pd.DataFrame(columns=["repo", "commit_id", "pred"])
+    for index, record in enumerate(test_data):
+        temp = [record.repo,
+                record.commit_id,
+                y_pred[index]]
+        temp_df = pd.DataFrame([temp], columns=["repo", "commit_id", "pred"])
+        results = pd.concat([results, temp_df])
+    
+    results.to_csv(f"./DAA_HERMES_GT_Java_Prediction.csv", encoding='utf-8',
+                   index=False)
+    
     joint_precision = metrics.precision_score(y_pred=y_pred, y_true=y_test)
     joint_recall = metrics.recall_score(y_pred=y_pred, y_true=y_test)
     joint_f1 = metrics.f1_score(y_pred=y_pred, y_true=y_test)
     joint_auc_roc = metrics.roc_auc_score(y_true=y_test, y_score=y_prob)
     joint_auc_pr = metrics.average_precision_score(y_true=y_test, y_score=y_prob)
     false_positives, false_negatives = retrieve_false_positive_negative(y_pred=y_pred, y_test=y_test)
+    
+    for record in test_data:
 
     for label in y_train:
         lines = lines + str(label) + '\n'
@@ -331,6 +346,8 @@ def measure_joint_model_using_logistic_regression(train_data, test_data, log_mes
 
     for label in y_test:
         lines = lines + str(label) + '\n'
+        
+    # TODO: why are the labels 0 for the testing data? These should all be 1 from SAP?
     return joint_precision, joint_recall, joint_f1, joint_auc_roc, joint_auc_pr, false_positives, false_negatives, lines
 
 
@@ -586,6 +603,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
     """Remove any of the DAA GT from the training data"""
     records_no_gt = []
     records_testing = []
+    records_testing_SAP = []
     
     gt_list = gt_data[["repo_owner", "repo_name", "commit_sha"]].values.tolist()
     for each in records:
@@ -593,6 +611,7 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                 each.repo.split('/')[-1],
                 each.commit_id]
         if temp in gt_list:
+            records_testing_SAP.append(each)
             records_testing.append(int(each.id))
         else:
             records_no_gt.append(each)
@@ -617,6 +636,9 @@ def do_experiment(size, ignore_number, github_issue, jira_ticket, use_comments, 
                              issue_vectorizer, patch_vectorizer, options)
 
         train_data, test_data = retrieve_data(records, train_data_indices, test_data_indices)
+        
+        """Set test data to records_testing_SAP"""
+        test_data = records_testing_SAP
 
         log_x_train, log_y_train = calculate_log_message_feature_vector(train_data, commit_message_vectorizer)
         log_x_test, log_y_test = calculate_log_message_feature_vector(test_data, commit_message_vectorizer)
